@@ -22,17 +22,22 @@
 
 """Produce a Getting Things Done next actions list from org files"""
 
+from typing import Optional
 from functools import reduce
 import os
+import argparse
 
 import orgparse
 
 
 def main():
+    parser = argparse.ArgumentParser()
+    parser.add_argument("tag", type=str, nargs="?", default=None)
+    args = parser.parse_args()
     with open(os.path.expanduser("~/.gtd"), "r") as fh:
         sources = [line.strip() for line in fh.readlines()]
     project_list = ProjectList(sources)
-    project_list.print()
+    project_list.print(args.tag)
     print()
     print(f"{len(project_list.projects)} projects")
     print(f"{project_list.n_actions()} next actions")
@@ -58,16 +63,18 @@ class Project:
     def _find_actions(node):
         for child in node.children:
             if child.heading == "Actions":
-                return list(map(lambda n: n.get_heading(format="raw"),
-                                filter(lambda n: n.todo == "NEXT",
-                                       child.children)))
+                return list(filter(lambda n: n.todo == "NEXT",
+                                   child.children))
         return []
 
-    def print(self):
+    def print(self, tag: Optional[str] = None):
         print("\033[97;1m" + self.name + "\033[0m")
         if self.actions:
             for action in self.actions:
-                print("\033[32;1m    ⤷  " + action + "\033[0m")
+                if tag is None or tag in action.tags:
+                    print("\033[32;1m    ⤷  "
+                          + action.get_heading(format="raw")
+                          + "\033[0m")
         else:
             print("\033[91;1m    ⚠  No next actions!\033[0m")
 
@@ -90,9 +97,9 @@ class ProjectList:
         return list(filter(lambda p: len(p.actions) == 0,
                            self.projects))
 
-    def print(self):
+    def print(self, tag: Optional[str] = None):
         for project in self.projects:
-            project.print()
+            project.print(tag)
             
     def scan_project_list(self, path):
         root = orgparse.load(path)
