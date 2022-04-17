@@ -33,10 +33,19 @@ import orgparse
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument("--randomize", "-r", action="store_true",
-                        help="display projects in random order")
-    parser.add_argument("tag", type=str, nargs="?", default=None,
-                        help="only display actions with this tag")
+    parser.add_argument(
+        "--randomize",
+        "-r",
+        action="store_true",
+        help="display projects in random order",
+    )
+    parser.add_argument(
+        "tag",
+        type=str,
+        nargs="?",
+        default=None,
+        help="only display actions with this tag",
+    )
     args = parser.parse_args()
     with open(os.path.expanduser("~/.gtd"), "r") as fh:
         sources = [line.strip() for line in fh.readlines()]
@@ -45,12 +54,13 @@ def main():
     print()
     print(f"{len(project_list.projects)} projects")
     print(f"{project_list.n_actions()} next actions")
-    print(f"{len(project_list.get_actionless_projects())} projects "
-          f"without next actions")
+    print(
+        f"{len(project_list.get_actionless_projects())} projects "
+        f"without next actions"
+    )
 
 
 class Project:
-
     def __init__(self, node_or_path):
         self.actions = []
         if isinstance(node_or_path, str):
@@ -67,8 +77,7 @@ class Project:
     def _find_actions(node):
         for child in node.children:
             if child.heading == "Actions":
-                return list(filter(lambda n: n.todo == "NEXT",
-                                   child.children))
+                return list(filter(lambda n: n.todo == "NEXT", child.children))
         return []
 
     def print(self, tag: Optional[str] = None):
@@ -76,15 +85,16 @@ class Project:
         if self.actions:
             for action in self.actions:
                 if tag is None or tag in action.tags:
-                    print("\033[32;1m    ⤷  "
-                          + action.get_heading(format="raw")
-                          + "\033[0m")
+                    print(
+                        "\033[32;1m    ⤷  "
+                        + action.get_heading(format="raw")
+                        + "\033[0m"
+                    )
         else:
             print("\033[91;1m    ⚠  No next actions!\033[0m")
 
 
 class ProjectList:
-
     def __init__(self, paths):
         self.projects = []
         for path in paths:
@@ -94,19 +104,24 @@ class ProjectList:
                 self.scan_project_list(path)
 
     def n_actions(self):
-        return reduce(lambda total, project: total + len(project.actions),
-                      self.projects, 0)
+        return reduce(
+            lambda total, project: total + len(project.actions),
+            self.projects,
+            0,
+        )
 
     def get_actionless_projects(self):
-        return list(filter(lambda p: len(p.actions) == 0,
-                           self.projects))
+        return list(filter(lambda p: len(p.actions) == 0, self.projects))
 
     def print(self, randomize: bool = False, tag: Optional[str] = None):
-        projects = random.sample(self.projects, len(self.projects)) \
-            if randomize else self.projects
+        projects = (
+            random.sample(self.projects, len(self.projects))
+            if randomize
+            else self.projects
+        )
         for project in projects:
             project.print(tag)
-            
+
     def scan_project_list(self, path):
         root = orgparse.load(path)
         project_lists = root.children
@@ -114,22 +129,33 @@ class ProjectList:
         for project in current_projects.children:
             self.projects.append(Project(project))
         return len(current_projects.children)
-    
+
     def scan_directory(self, root_path):
-        subdirs = list(map(
-            lambda subdir: os.path.join(root_path, subdir),
-            filter(lambda entry: os.path.isdir(os.path.join(root_path, entry)),
-                   os.listdir(root_path))
-            ))
-        org_filenames = sorted(list(map(
-            lambda subdir: os.path.join(subdir,
-                                        os.path.basename(subdir) + ".org"),
-            subdirs
-        )))
+        subdirs = list(
+            map(
+                lambda subdir: os.path.join(root_path, subdir),
+                filter(
+                    lambda entry: os.path.isdir(
+                        os.path.join(root_path, entry)
+                    ),
+                    os.listdir(root_path),
+                ),
+            )
+        )
+        org_filenames = sorted(
+            list(
+                map(
+                    lambda subdir: os.path.join(
+                        subdir, os.path.basename(subdir) + ".org"
+                    ),
+                    subdirs,
+                )
+            )
+        )
         for org_filename in org_filenames:
             self.scan_project_org_file(org_filename)
         return len(org_filenames)
-    
+
     def scan_project_org_file(self, filename: str):
         self.projects.append(Project(filename))
 
