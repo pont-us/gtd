@@ -26,18 +26,22 @@ from typing import Optional
 from functools import reduce
 import os
 import argparse
+import random
 
 import orgparse
 
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument("tag", type=str, nargs="?", default=None)
+    parser.add_argument("--randomize", "-r", action="store_true",
+                        help="display projects in random order")
+    parser.add_argument("tag", type=str, nargs="?", default=None,
+                        help="only display actions with this tag")
     args = parser.parse_args()
     with open(os.path.expanduser("~/.gtd"), "r") as fh:
         sources = [line.strip() for line in fh.readlines()]
     project_list = ProjectList(sources)
-    project_list.print(args.tag)
+    project_list.print(args.randomize, args.tag)
     print()
     print(f"{len(project_list.projects)} projects")
     print(f"{project_list.n_actions()} next actions")
@@ -97,8 +101,10 @@ class ProjectList:
         return list(filter(lambda p: len(p.actions) == 0,
                            self.projects))
 
-    def print(self, tag: Optional[str] = None):
-        for project in self.projects:
+    def print(self, randomize: bool = False, tag: Optional[str] = None):
+        projects = random.sample(self.projects, len(self.projects)) \
+            if randomize else self.projects
+        for project in projects:
             project.print(tag)
             
     def scan_project_list(self, path):
