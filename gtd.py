@@ -27,6 +27,7 @@ from functools import reduce
 import os
 import argparse
 import random
+import yaml
 
 import orgparse
 
@@ -47,8 +48,8 @@ def main():
         help="only display actions with this tag",
     )
     args = parser.parse_args()
-    with open(os.path.expanduser("~/.gtd"), "r") as fh:
-        sources = [line.strip() for line in fh.readlines()]
+    config = read_config("~/.gtd")
+    sources = map(expand_path, config["projects"])
     project_list = ProjectList(sources)
     project_list.print(args.randomize, args.tag)
     print()
@@ -58,6 +59,26 @@ def main():
         f"{len(project_list.get_actionless_projects())} projects "
         f"without next actions"
     )
+    inboxes = map(expand_path, config["inboxes"])
+    inboxes_empty = True
+    for inbox in inboxes:
+        contents = os.listdir(inbox)
+        n_items = len(contents)
+        if n_items > 0:
+            inboxes_empty = False
+            print(f"\033[91;1m{n_items} items in {inbox}\033[0m")
+    if inboxes_empty:
+        print("All inboxes empty")
+
+
+def read_config(path: str) -> dict:
+    with open(expand_path(path), "r") as fh:
+        config = yaml.safe_load(fh)
+    return config
+
+
+def expand_path(path: str) -> str:
+    return os.path.expandvars(os.path.expanduser(path))
 
 
 class Project:
