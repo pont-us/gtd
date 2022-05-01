@@ -55,10 +55,12 @@ def main():
     print()
     print(f"{len(project_list.projects)} projects")
     print(f"{project_list.n_actions()} next actions")
-    print(
-        f"{len(project_list.get_actionless_projects())} projects "
-        f"without next actions"
-    )
+
+    n_actionless_projects = len(project_list.get_actionless_projects())
+    if n_actionless_projects > 0:
+        print(
+            f"\033[91;1m{n_actionless_projects} projects without next actions"
+        )
     inboxes = map(expand_path, config["inboxes"])
     inboxes_empty = True
     for inbox in inboxes:
