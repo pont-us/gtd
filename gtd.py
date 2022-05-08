@@ -68,7 +68,8 @@ def main():
         n_items = len(contents)
         if n_items > 0:
             inboxes_empty = False
-            print(f"\033[91;1m{n_items} items in {inbox}\033[0m")
+            print(f"\033[91;1m{n_items} item{'s' if n_items > 1 else ''} in "
+                  f"{inbox}\033[0m")
     if inboxes_empty:
         print("All inboxes empty")
 
