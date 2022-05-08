@@ -41,6 +41,12 @@ def main():
         help="display projects in random order",
     )
     parser.add_argument(
+        "--projects",
+        "-p",
+        action="store_true",
+        help="only show projects, not actions",
+    )
+    parser.add_argument(
         "tag",
         type=str,
         nargs="?",
@@ -51,7 +57,7 @@ def main():
     config = read_config("~/.gtd")
     sources = map(expand_path, config["projects"])
     project_list = ProjectList(sources)
-    project_list.print(args.randomize, args.tag)
+    project_list.print(args.randomize, args.tag, not args.projects)
     print()
     print(f"{len(project_list.projects)} projects")
     print(f"{project_list.n_actions()} next actions")
@@ -59,7 +65,9 @@ def main():
     n_actionless_projects = len(project_list.get_actionless_projects())
     if n_actionless_projects > 0:
         print(
-            f"\033[91;1m{n_actionless_projects} projects without next actions"
+            f"\033[91;1m{n_actionless_projects} "
+            f"project{'s' if n_actionless_projects > 1 else ''} "
+            f"without next actions\033[0m"
         )
     inboxes = map(expand_path, config["inboxes"])
     inboxes_empty = True
@@ -68,8 +76,10 @@ def main():
         n_items = len(contents)
         if n_items > 0:
             inboxes_empty = False
-            print(f"\033[91;1m{n_items} item{'s' if n_items > 1 else ''} in "
-                  f"{inbox}\033[0m")
+            print(
+                f"\033[91;1m{n_items} item{'s' if n_items > 1 else ''} in "
+                f"{inbox}\033[0m"
+            )
     if inboxes_empty:
         print("All inboxes empty")
 
@@ -104,18 +114,28 @@ class Project:
                 return list(filter(lambda n: n.todo == "NEXT", child.children))
         return []
 
-    def print(self, tag: Optional[str] = None):
-        print("\033[97;1m" + self.name + "\033[0m")
-        if self.actions:
-            for action in self.actions:
-                if tag is None or tag in action.tags:
-                    print(
-                        "\033[32;1m    ⤷  "
-                        + action.get_heading(format="raw")
-                        + "\033[0m"
-                    )
+    def print(self, tag: Optional[str] = None, with_actions: bool = True):
+        if with_actions:
+            print(f"\033[97;1m" + self.name + "\033[0m")
+            if self.actions:
+                for action in self.actions:
+                    if tag is None or tag in action.tags:
+                        print(
+                            "\033[32;1m    ⤷  "
+                            + action.get_heading(format="raw")
+                            + "\033[0m"
+                        )
+            else:
+                print("\033[91;1m    ⚠  No next actions!\033[0m")
         else:
-            print("\033[91;1m    ⚠  No next actions!\033[0m")
+            print(
+                self.name
+                + (
+                    ""
+                    if self.actions
+                    else " \033[91;1m⚠  No next actions!\033[0m"
+                )
+            )
 
 
 class ProjectList:
@@ -137,14 +157,19 @@ class ProjectList:
     def get_actionless_projects(self):
         return list(filter(lambda p: len(p.actions) == 0, self.projects))
 
-    def print(self, randomize: bool = False, tag: Optional[str] = None):
+    def print(
+        self,
+        randomize: bool = False,
+        tag: Optional[str] = None,
+        with_actions: bool = True,
+    ):
         projects = (
             random.sample(self.projects, len(self.projects))
             if randomize
             else self.projects
         )
         for project in projects:
-            project.print(tag)
+            project.print(tag, with_actions)
 
     def scan_project_list(self, path):
         root = orgparse.load(path)
