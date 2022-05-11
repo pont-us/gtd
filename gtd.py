@@ -21,13 +21,15 @@
 # SOFTWARE.
 
 """Produce a Getting Things Done next actions list from org files"""
-
+import shutil
 from typing import Optional
 from functools import reduce
 import os
 import argparse
 import random
 import yaml
+import sqlite3
+import tempfile
 
 import orgparse
 
@@ -94,6 +96,11 @@ def print_project_list(args):
                 f"\033[91;1m{n_items} item{'s' if n_items > 1 else ''} in "
                 f"{inbox}\033[0m"
             )
+    if config["bookmarks"]:
+        n_bookmarks = count_firefox_bookmarks(expand_path(config["bookmarks"]))
+        if n_bookmarks > 0:
+            print(f"\033[91;1m{n_bookmarks} bookmarks on toolbar\033[0m")
+            inboxes_empty = False
     if inboxes_empty:
         print("All inboxes empty")
 
@@ -117,6 +124,22 @@ def create_project_directory(path: str) -> None:
             "#+TODO: WAIT NEXT | DONE NAAH\n* Actions\n"
             "** NEXT Determine next action\n"
         )
+
+
+def count_firefox_bookmarks(db_path) -> int:
+    with tempfile.TemporaryDirectory() as tempdir:
+        db_temp_path = os.path.join(tempdir, "places.sqlite")
+        # Firefox locks the database so we work from a copy
+        shutil.copy2(db_path, db_temp_path)
+        db = sqlite3.connect("file:" + db_temp_path + "?mode=ro")
+        cursor = db.cursor()
+        cursor.execute("SELECT id FROM moz_bookmarks WHERE title='toolbar'")
+        toolbar_id = list(cursor)[0][0]
+        cursor.execute(
+            f"SELECT title FROM moz_bookmarks WHERE parent={toolbar_id}"
+        )
+        # We don't use the titles at present, but might want them one day
+        return len(list(cursor))
 
 
 class Project:
