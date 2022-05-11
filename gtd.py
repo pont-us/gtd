@@ -47,6 +47,13 @@ def main():
         help="only show projects, not actions",
     )
     parser.add_argument(
+        "--create",
+        "-c",
+        type=str,
+        metavar="path",
+        help="create a project directory",
+    )
+    parser.add_argument(
         "tag",
         type=str,
         nargs="?",
@@ -54,6 +61,13 @@ def main():
         help="only display actions with this tag",
     )
     args = parser.parse_args()
+    if args.create:
+        create_project_directory(args.create)
+    else:
+        print_project_list(args)
+
+
+def print_project_list(args):
     config = read_config("~/.gtd")
     sources = map(expand_path, config["projects"])
     project_list = ProjectList(sources)
@@ -92,6 +106,17 @@ def read_config(path: str) -> dict:
 
 def expand_path(path: str) -> str:
     return os.path.expandvars(os.path.expanduser(path))
+
+
+def create_project_directory(path: str) -> None:
+    path_norm = os.path.normpath(path)
+    os.mkdir(path_norm)
+    filename = os.path.join(path_norm, os.path.basename(path_norm) + ".org")
+    with open(filename, "w") as fh:
+        fh.write(
+            "#+TODO: WAIT NEXT | DONE NAAH\n* Actions\n"
+            "** NEXT Determine next action\n"
+        )
 
 
 class Project:
