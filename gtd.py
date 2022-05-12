@@ -81,8 +81,7 @@ def print_project_list(args):
     n_actionless_projects = len(project_list.get_actionless_projects())
     if n_actionless_projects > 0:
         print(
-            f"\033[91;1m{n_actionless_projects} "
-            f"project{'s' if n_actionless_projects > 1 else ''} "
+            f"\033[91;1m{plural(n_actionless_projects, 'project')} "
             f"without next actions\033[0m"
         )
     inboxes = map(expand_path, config["inboxes"])
@@ -92,17 +91,21 @@ def print_project_list(args):
         n_items = len(contents)
         if n_items > 0:
             inboxes_empty = False
-            print(
-                f"\033[91;1m{n_items} item{'s' if n_items > 1 else ''} in "
-                f"{inbox}\033[0m"
-            )
+            print(f"\033[91;1m{plural(n_items, 'item')} in {inbox}\033[0m")
     if config["bookmarks"]:
         n_bookmarks = count_firefox_bookmarks(expand_path(config["bookmarks"]))
         if n_bookmarks > 0:
-            print(f"\033[91;1m{n_bookmarks} bookmarks on toolbar\033[0m")
+            print(
+                f"\033[91;1m{plural(n_bookmarks, 'bookmark')} "
+                f"on toolbar\033[0m"
+            )
             inboxes_empty = False
     if inboxes_empty:
         print("All inboxes empty")
+
+
+def plural(n: int, name: str) -> str:
+    return f"{n} {name}{'s' if n > 1 else ''}"
 
 
 def read_config(path: str) -> dict:
