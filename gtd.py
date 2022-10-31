@@ -21,6 +21,7 @@
 # SOFTWARE.
 
 """Produce a Getting Things Done next actions list from org files"""
+
 import shutil
 from typing import Optional
 from functools import reduce
@@ -146,10 +147,12 @@ def count_firefox_bookmarks(db_path) -> int:
 
 
 class Project:
+
     def __init__(self, node_or_path):
         self.actions = []
         if isinstance(node_or_path, str):
-            self.name = os.path.splitext(os.path.basename(node_or_path))[0]
+            self.name = os.path.splitext(os.path.basename(node_or_path))[0] \
+                + " \U0001F5C0"
             if os.path.isfile(node_or_path):
                 node = orgparse.load(node_or_path)
                 self.actions = self._find_actions(node)
@@ -189,7 +192,8 @@ class Project:
             )
 
 
-class ProjectList:
+class ProjectList
+
     def __init__(self, paths):
         self.projects = []
         for path in paths:
