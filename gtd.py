@@ -192,7 +192,7 @@ class Project:
             )
 
 
-class ProjectList
+class ProjectList:
 
     def __init__(self, paths):
         self.projects = []
