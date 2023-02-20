@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-# Copyright 2022 Pontus Lurcock (pont -at- talvi.net)
+# Copyright 2022–2023 Pontus Lurcock (pont -at- talvi.net)
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to
@@ -22,6 +22,7 @@
 
 """Produce a Getting Things Done next actions list from org files"""
 
+from datetime import datetime
 import shutil
 from typing import Optional
 from functools import reduce
@@ -57,6 +58,12 @@ def main():
         help="create a project directory",
     )
     parser.add_argument(
+        "--count",
+        "-C",
+        action="store_true",
+        help="only show date and project and action counts"
+    )
+    parser.add_argument(
         "tag",
         type=str,
         nargs="?",
@@ -74,11 +81,18 @@ def print_project_list(args):
     config = read_config("~/.gtd")
     sources = map(expand_path, config["projects"])
     project_list = ProjectList(sources)
-    project_list.print(args.randomize, args.tag, not args.projects)
-    print()
-    print(f"{len(project_list.projects)} projects")
-    print(f"{project_list.n_actions()} next actions")
+    if args.count:
+        print(f"{datetime.now().strftime('%Y-%m-%d')} "
+              f"{len(project_list.projects)} {project_list.n_actions()}")
+    else:
+        project_list.print(args.randomize, args.tag, not args.projects)
+        print()
+        print(f"{len(project_list.projects)} projects")
+        print(f"{project_list.n_actions()} next actions")
+        print_warnings(project_list, config)
 
+
+def print_warnings(project_list, config):
     n_actionless_projects = len(project_list.get_actionless_projects())
     if n_actionless_projects > 0:
         print(
