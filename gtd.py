@@ -172,7 +172,7 @@ class Project:
                 self.actions = self._find_actions(node)
         else:
             node = node_or_path
-            self.name = node.get_heading(format="raw")
+            self.name = node.get_heading(format="raw") + " ∗"
             self.actions = self._find_actions(node)
 
     @staticmethod
